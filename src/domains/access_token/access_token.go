@@ -1,7 +1,10 @@
 package access_token
 
 import (
+	"strings"
 	"time"
+
+	"github.com/manuelhdez/bs_oauth-api/src/utils/errors"
 )
 
 const (
@@ -13,6 +16,22 @@ type AccessToken struct {
 	UserId      int64  `json:"user_id"`
 	ClientId    int64  `json:"client_id"`
 	Expires     int64  `json:"expires"`
+}
+
+func (at *AccessToken) Validate() *errors.RestErr {
+	at.AccessToken = strings.TrimSpace(at.AccessToken)
+	if at.AccessToken == "" {
+		return errors.NewBadRequestError("invalid access token")
+	}
+
+	if at.UserId <= 0 {
+		return errors.NewBadRequestError("invalid user id")
+	}
+
+	if at.ClientId <= 0 {
+		return errors.NewBadRequestError("invalid client id")
+	}
+	return nil
 }
 
 func GetNewAccessToken() AccessToken {
