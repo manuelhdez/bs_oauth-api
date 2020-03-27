@@ -4,9 +4,10 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/federicoleon/bookstore_utils-go/rest_errors"
 	"github.com/gin-gonic/gin"
-	"github.com/manuelhdez/bs_oauth-api/src/domains/access_token"
-	"github.com/manuelhdez/bs_oauth-api/src/utils/errors"
+	atDomain "github.com/manuelhdez/bs_oauth-api/src/domains/access_token"
+	"github.com/manuelhdez/bs_oauth-api/src/services/access_token"
 )
 
 type AccessTokenHandler interface {
@@ -14,17 +15,23 @@ type AccessTokenHandler interface {
 	Create(*gin.Context)
 }
 
-type accessTokenHander struct {
+type accessTokenHandler struct {
 	service access_token.Service
 }
 
-func NewHandler(service access_token.Service) AccessTokenHandler {
-	return &accessTokenHander{
+// func NewHandler(service access_token.Service) AccessTokenHandler {
+// 	return &accessTokenHander{
+// 		service: service,
+// 	}
+// }
+
+func NewAccessTokenHandler(service access_token.Service) AccessTokenHandler {
+	return &accessTokenHandler{
 		service: service,
 	}
 }
 
-func (handler *accessTokenHander) GetById(c *gin.Context) {
+func (handler *accessTokenHandler) GetById(c *gin.Context) {
 	accessTokenId := strings.TrimSpace(c.Param("access_token_id"))
 
 	accessToken, err := handler.service.GetById(accessTokenId)
@@ -38,17 +45,18 @@ func (handler *accessTokenHander) GetById(c *gin.Context) {
 	})
 }
 
-func (handler *accessTokenHander) Create(c *gin.Context) {
-	var at access_token.AccessToken
-	if err := c.ShouldBindJSON(&at); err != nil {
-		restErr := errors.NewBadRequestError("invalid json")
-		c.JSON(restErr.Status, restErr)
+func (handler *accessTokenHandler) Create(c *gin.Context) {
+	var request atDomain.AccessTokenRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		restErr := rest_errors.NewBadRequestError("invalid json body")
+		c.JSON(restErr.Status(), restErr)
 		return
 	}
 
-	if err := handler.service.Create(at); err != nil {
+	accessToken, err := handler.service.Create(request)
+	if err != nil {
 		c.JSON(err.Status, err)
 		return
 	}
-	c.JSON(http.StatusCreated, at)
+	c.JSON(http.StatusCreated, accessToken)
 }

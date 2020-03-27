@@ -38,3 +38,11 @@ func NewInternalServerError(message string) *RestErr {
 func NewError(msg string) error {
 	return errors.New(msg)
 }
+
+func NewRestErrorFromBytes(bytes []byte) *RestErr {
+	return &RestErr{
+		Message: string(bytes),
+		Status:  http.StatusInternalServerError,
+		Error:   "form bytes",
+	}
+}
